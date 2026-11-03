@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { WindSound } from "./audio/windSound";
 import { Controls } from "./components/Controls";
 import { WindCanvas } from "./components/WindCanvas";
 import { useReducedMotion } from "./hooks/useReducedMotion";
@@ -21,6 +22,20 @@ export default function App() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [fps, setFps] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const sound = useRef<WindSound | null>(null);
+  const [soundOn, setSoundOn] = useState(false);
+
+  // AudioContext can only start after a click, so it's created here and not on load
+  const toggleSound = useCallback(async () => {
+    sound.current ??= new WindSound();
+    if (sound.current.playing) {
+      await sound.current.stop();
+      setSoundOn(false);
+    } else {
+      await sound.current.start();
+      setSoundOn(true);
+    }
+  }, []);
 
   const change = useCallback((patch: Partial<Settings>) => setSettings((s) => ({ ...s, ...patch })), []);
 
@@ -41,10 +56,11 @@ export default function App() {
       } else if (e.key === "h" || e.key === "H") setPanelOpen((v) => !v);
       else if (e.key === "r" || e.key === "R") newWind();
       else if (e.key === "c" || e.key === "C") setClearSignal((n) => n + 1);
+      else if (e.key === "m" || e.key === "M") toggleSound();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [toggleSound]);
 
   function newWind() {
     setSeed(Math.floor(Math.random() * 1e9));
@@ -87,7 +103,7 @@ export default function App() {
         if (f) loadPhoto(f);
       }}
     >
-      <WindCanvas settings={settings} paused={paused} seed={seed} clearSignal={clearSignal} onFps={setFps} />
+      <WindCanvas settings={settings} paused={paused} seed={seed} clearSignal={clearSignal} sound={sound} onFps={setFps} />
 
       <button
         type="button"
@@ -104,6 +120,8 @@ export default function App() {
           onChange={change}
           paused={paused}
           onPause={() => setPaused((v) => !v)}
+          soundOn={soundOn}
+          onSound={toggleSound}
           onReseed={newWind}
           onPhoto={loadPhoto}
           hasPhoto={photo !== null}

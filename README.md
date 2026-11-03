@@ -19,7 +19,8 @@ This is a remake of my [wind-animation](https://github.com/samsonidze/wind-anima
 - 4 colour themes
 - you can add your own photo as background (button or drag it onto the page). It stays in your browser, nothing gets uploaded
 - settings are saved in the URL so you can send someone a link to the same thing
-- keys: Space = pause, R = new random wind, C = clear trails, H = hide panel
+- wind sound (Sound on button or M). It's generated, not a recording, so it follows what's on screen: stronger wind is louder, and a gust you drag whooshes and dies down with it
+- keys: Space = pause, R = new random wind, C = clear trails, M = sound, H = hide panel
 - slower and fewer particles if "reduce motion" is on in your OS
 
 ![gust](docs/gust.jpg)
@@ -31,6 +32,8 @@ Every frame each particle gets the wind at its position: the main wind (directio
 The swirl part is the curl of 3D simplex noise, x and y are the screen and z is time. I first tried the usual approach where the noise value is used as an angle, but particles kept collecting into thin lines and leaving empty areas. Taking the curl fixes that because the field has no divergence, so nothing piles up. There's a test for it.
 
 Gusts are just extra velocity around the mouse that fades out (half-life 0.6s).
+
+Sound: brown noise through two filters, a low rumble and a band-pass "whistle". The wind level (strength + turbulence + the biggest gust right now) sets the volume and how high the whistle is, with a slow wobble on top so it doesn't sound like a fan. All Web Audio API, no audio files.
 
 Trails: the canvas isn't cleared, it's faded a bit every frame with `destination-out`. That keeps it transparent so the background photo is still visible behind it.
 
@@ -47,6 +50,7 @@ Performance stuff:
 src/sim/noise.ts          simplex noise
 src/sim/field.ts          wind at a point, curl, gusts
 src/sim/particles.ts      particle system
+src/audio/windSound.ts    wind sound
 src/settings.ts           defaults, presets, url hash
 src/components/WindCanvas.tsx   animation loop + drawing
 src/components/Controls.tsx     the panel

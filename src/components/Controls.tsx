@@ -7,6 +7,8 @@ interface Props {
   onChange: (patch: Partial<Settings>) => void;
   paused: boolean;
   onPause: () => void;
+  soundOn: boolean;
+  onSound: () => void;
   onReseed: () => void;
   onPhoto: (file: File) => void;
   hasPhoto: boolean;
@@ -59,6 +61,9 @@ export function Controls(p: Props) {
 
       <div className="actions">
         <button type="button" onClick={p.onPause}>{p.paused ? "Play" : "Pause"}</button>
+        <button type="button" onClick={p.onSound} aria-pressed={p.soundOn}>
+          {p.soundOn ? "Sound off" : "Sound on"}
+        </button>
         <button type="button" onClick={p.onReseed} title="New random wind (R)">New wind</button>
         {p.hasPhoto ? (
           <button type="button" onClick={p.onClearPhoto}>Remove photo</button>
@@ -79,7 +84,7 @@ export function Controls(p: Props) {
       </div>
 
       <p className="keys">
-        Drag on the wind to push it. <kbd>Space</kbd> pause · <kbd>R</kbd> new wind · <kbd>C</kbd> clear ·{" "}
+        Drag on the wind to push it. <kbd>Space</kbd> pause · <kbd>R</kbd> new wind · <kbd>C</kbd> clear · <kbd>M</kbd> sound ·{" "}
         <kbd>H</kbd> hide panel{p.fps !== null && <span className="fps"> · {p.fps} fps</span>}
       </p>
     </aside>

@@ -4,6 +4,7 @@ import { createNoise3D } from "../sim/noise";
 import { paletteById } from "../sim/palettes";
 import { Particles } from "../sim/particles";
 import type { Settings } from "../settings";
+import { windLevel, type WindSound } from "../audio/windSound";
 
 const MAX_PARTICLES = 8000;
 const ALPHA_LEVELS = 3;
@@ -13,10 +14,11 @@ interface Props {
   paused: boolean;
   seed: number;
   clearSignal: number; // bump to clear
+  sound: React.RefObject<WindSound | null>;
   onFps?: (fps: number) => void;
 }
 
-export function WindCanvas({ settings, paused, seed, clearSignal, onFps }: Props) {
+export function WindCanvas({ settings, paused, seed, clearSignal, sound, onFps }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const settingsRef = useRef(settings);
   const pausedRef = useRef(paused);
@@ -97,6 +99,7 @@ export function WindCanvas({ settings, paused, seed, clearSignal, onFps }: Props
     let t = 0;
     let frames = 0;
     let fpsSince = last;
+    let lastSound = 0;
 
     function frame(now: number) {
       raf = requestAnimationFrame(frame);
@@ -116,7 +119,10 @@ export function WindCanvas({ settings, paused, seed, clearSignal, onFps }: Props
         ctx.clearRect(0, 0, width, height);
         clearRef.current = false;
       }
-      if (pausedRef.current) return;
+      if (pausedRef.current) {
+        sound.current?.quiet();
+        return;
+      }
 
       t += dt * 0.15 * s.timeScale;
       particles.setCount(s.count);
@@ -130,6 +136,13 @@ export function WindCanvas({ settings, paused, seed, clearSignal, onFps }: Props
       ctx.globalCompositeOperation = "source-over";
 
       draw(ctx, particles, s);
+
+      if (sound.current?.playing && now - lastSound > 100) {
+        let gust = 0;
+        for (const g of gustsRef.current) gust = Math.max(gust, (g.life * Math.hypot(g.vx, g.vy)) / 12);
+        sound.current.setLevel(windLevel(s.strength, s.turbulence, gust));
+        lastSound = now;
+      }
     }
     raf = requestAnimationFrame(frame);
 
