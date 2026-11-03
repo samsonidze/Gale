@@ -1,0 +1,151 @@
+:root {
+  --panel-bg: rgba(12, 16, 22, 0.72);
+  --panel-line: rgba(255, 255, 255, 0.09);
+  --text: #dfe6ee;
+  --muted: #8794a3;
+  --accent: #b9d6ee;
+  font-family: "Figtree", system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; }
+body { background: #05080d; overflow: hidden; }
+
+.stage {
+  position: relative;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+}
+
+.stage.has-photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 8, 13, 0.35);
+}
+
+.wind {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+}
+.wind:active { cursor: grabbing; }
+
+.panel-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px);
+}
+
+.panel {
+  position: absolute;
+  top: 56px;
+  right: 16px;
+  width: 290px;
+  max-height: calc(100% - 72px);
+  overflow-y: auto;
+  padding: 14px 16px 12px;
+  display: grid;
+  gap: 10px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-line);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+
+button {
+  font: inherit;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-line);
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+button:hover { background: rgba(255, 255, 255, 0.12); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.presets { display: flex; gap: 6px; }
+.presets button { flex: 1; padding: 5px 0; }
+
+.row-dial { display: flex; align-items: center; gap: 12px; }
+.row-dial .stack { flex: 1; display: grid; gap: 8px; }
+
+.dial { width: 64px; height: 64px; flex: none; cursor: pointer; touch-action: none; }
+.dial-ring { fill: rgba(255, 255, 255, 0.04); stroke: var(--panel-line); stroke-width: 1.5; }
+.dial-needle { stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; }
+.dial-tip { fill: var(--accent); }
+
+.slider {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "label value" "range range";
+  row-gap: 2px;
+}
+.slider .label { grid-area: label; color: var(--muted); }
+.slider output { grid-area: value; font-variant-numeric: tabular-nums; }
+.slider input { grid-area: range; width: 100%; margin: 0; accent-color: var(--accent); }
+
+.swatches { display: flex; gap: 6px; }
+.swatches button {
+  flex: 1;
+  height: 18px;
+  padding: 0;
+  border-radius: 4px;
+}
+.swatches button[aria-checked="true"] { outline: 2px solid var(--text); outline-offset: 2px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.keys { margin: 2px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+kbd {
+  font: inherit;
+  font-size: 11px;
+  padding: 0 4px;
+  border: 1px solid var(--panel-line);
+  border-radius: 3px;
+  color: var(--text);
+}
+.fps { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.drop-hint {
+  position: absolute;
+  inset: 16px;
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--accent);
+  border-radius: 12px;
+  background: rgba(5, 8, 13, 0.5);
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .panel {
+    top: auto;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: auto;
+    max-height: 55%;
+    border-radius: 12px 12px 0 0;
+  }
+}
