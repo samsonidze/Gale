@@ -35,6 +35,8 @@ Gusts are just extra velocity around the mouse that fades out (half-life 0.6s).
 
 Sound: brown noise through two filters, a low rumble and a band-pass "whistle". The wind level (strength + turbulence + the biggest gust right now) sets the volume and how high the whistle is, with a slow wobble on top so it doesn't sound like a fan. All Web Audio API, no audio files.
 
+On iPhone, web audio is normally muted by the silent switch. When you turn the sound on, the page asks Safari for "playback" mode (`navigator.audioSession`), the same as a music or video site, so you hear it with the switch on. Older iOS versions don't have that API, so there it plays a tiny silent `<audio>` loop instead, which puts Safari in the same mode.
+
 Trails: the canvas isn't cleared, it's faded a bit every frame with `destination-out`. That keeps it transparent so the background photo is still visible behind it.
 
 Performance stuff:

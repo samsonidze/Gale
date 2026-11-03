@@ -13,6 +13,7 @@ export class WindSound {
   private rumbleGain: GainNode;
   private whistle: BiquadFilterNode;
   private whistleGain: GainNode;
+  private keepAlive: HTMLAudioElement | null = null;
   private started = false;
 
   constructor() {
@@ -52,10 +53,25 @@ export class WindSound {
 
     noise.start();
     lfo.start();
+
+    // iOS suspends the context when you leave the tab or get a call; pick it back up
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && this.started) {
+        this.keepAlive?.play().catch(() => {});
+        this.ctx.resume();
+      }
+    });
   }
 
-  // has to be called from a click/keypress, browsers block audio otherwise
+  // has to be called from a click/keypress, browsers block audio otherwise.
+  // the iphone stuff below must happen before the first await, while we're still
+  // inside the click
   async start() {
+    playThroughSilentSwitch(true);
+    if (!hasAudioSession()) {
+      this.keepAlive ??= silentLoop();
+      this.keepAlive.play().catch(() => {});
+    }
     await this.ctx.resume();
     this.started = true;
   }
@@ -64,7 +80,10 @@ export class WindSound {
     this.master.gain.setTargetAtTime(0, this.ctx.currentTime, 0.2);
     this.started = false;
     setTimeout(() => {
-      if (!this.started) this.ctx.suspend();
+      if (this.started) return;
+      this.ctx.suspend();
+      this.keepAlive?.pause();
+      playThroughSilentSwitch(false);
     }, 800);
   }
 
@@ -90,6 +109,55 @@ export class WindSound {
 }
 
 const FADE = 0.05;
+
+// On iPhone, web audio is muted by the silent switch unless the page is in
+// "playback" mode, like a video or music player. Newer Safari lets you ask for
+// that directly (navigator.audioSession). Older versions switch to it when a real
+// <audio> element is playing, so there we loop a tiny silent file.
+type AudioSessionNav = Navigator & { audioSession?: { type: string } };
+
+function hasAudioSession() {
+  return "audioSession" in navigator;
+}
+
+function playThroughSilentSwitch(on: boolean) {
+  const nav = navigator as AudioSessionNav;
+  if (nav.audioSession) nav.audioSession.type = on ? "playback" : "auto";
+}
+
+function silentLoop(): HTMLAudioElement {
+  const el = new Audio(silentWav());
+  el.loop = true;
+  el.setAttribute("playsinline", "");
+  el.setAttribute("x-webkit-airplay", "deny"); // otherwise it shows up as something to AirPlay
+  el.disableRemotePlayback = true;
+  return el;
+}
+
+// half a second of silence as a wav data url, so there's no file to ship
+function silentWav(): string {
+  const rate = 8000;
+  const samples = rate / 2;
+  const bytes = new Uint8Array(44 + samples * 2);
+  const v = new DataView(bytes.buffer);
+  const str = (o: number, s: string) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  str(0, "RIFF");
+  v.setUint32(4, 36 + samples * 2, true);
+  str(8, "WAVE");
+  str(12, "fmt ");
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); // pcm
+  v.setUint16(22, 1, true); // mono
+  v.setUint32(24, rate, true);
+  v.setUint32(28, rate * 2, true);
+  v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true);
+  str(36, "data");
+  v.setUint32(40, samples * 2, true);
+  let bin = "";
+  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  return "data:audio/wav;base64," + btoa(bin);
+}
 
 // brown noise is deeper than white noise, closer to real wind
 function brownNoise(ctx: AudioContext, seconds: number): AudioBuffer {
